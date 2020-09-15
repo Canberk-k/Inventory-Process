@@ -1,0 +1,88 @@
+using System;
+using System.Data;
+using System.Collections.Generic;
+using System.Text;
+using System.IO;
+using eBAFormData;
+using eBAPI.Connection;
+using eBAIntegrationAPI;                             
+using System.Data.SqlClient;
+using System.Collections;
+using eBAControls;
+using eBAControls.eBABaseForm;
+using System.Web.UI.WebControls;
+using eBAFormData;
+using eBAPI.Connection;
+using eBAPI;
+using eBAPI.DocumentManagement;
+
+namespace EnvanterSureci
+{
+
+	public partial class EnvanterTeslim
+	{
+		
+		public void OnSaveData()
+		{
+		 if(txtIadeTeslimTarih.IsValid){tkontrol.Text="1";}
+         else{tkontrol.Text="0";}	 
+		}
+		
+		public void detay_Yorumlar_RowDeleting(object sender, eBATableDeleteRowEventArgs args, DataRow dr)
+		{    
+             eBAForm frm = new eBAForm(Convert.ToInt32(dr["DOCUMENTID"]));
+            if(LogonUser!=frm.Fields["bdUser"].AsString)
+            {
+               args.allow=false;  
+               ShowMessageBox("Sadece kendi yorumlarınızı silebilirsiniz.",eBAMessageBoxType.Information);
+            }
+
+		}
+		
+		public void OnModalReturn(object sender, eBAModalEventArgs e)
+		{
+            if (!string.IsNullOrEmpty(txtIadeTeslimTarih.Text))
+            {
+                if (sender == txtIadeTeslimTarih && (txtIadeTeslimTarih).IsValid)
+                {
+                    DateTime now = DateTime.Now;
+                    string now2 = now.Date.ToShortDateString();
+                    string date = (txtIadeTeslimTarih.Value).ToShortDateString();
+                    if (Convert.ToDateTime(date) < Convert.ToDateTime(now2))
+                    {
+                        txtIadeTeslimTarih.Value = DateTime.Now;
+                        ShowMessageBox("Geçmiş bir tarih seçemezsiniz.");
+                    }
+
+                    SaveFormData(false, true);
+
+                }
+            }
+		}
+		
+		public void detay_Yorumlar_AfterShowModal(object sender, eBATableModalEventArgs args)
+		{
+			// LogonUserId.Text=args.parameters["Id"].ToString();
+		}
+		
+		public void OnFormLoad()
+        {
+            Dosyalar1.AllowedExtensions = "jpeg|doc|docx|pdf|xls|xlsx|txt|msg|eml";                                 
+        }
+		
+	string  dosyauzantisi;
+       
+       public static string GetExtension(string path)
+       {
+          string uzanti = Path.GetExtension(path);
+          
+          return uzanti;
+       }
+      		
+		public void Dosyalar1_OnAfterAttach(object sender, eBAAttachmentFileEventArgs e)
+		{
+
+		}
+
+	}
+}
