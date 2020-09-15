@@ -60,11 +60,6 @@ namespace EnvanterSureci
             }
 		}
 		
-		public void detay_Yorumlar_AfterShowModal(object sender, eBATableModalEventArgs args)
-		{
-			// LogonUserId.Text=args.parameters["Id"].ToString();
-		}
-		
 		public void OnFormLoad()
         {
             Dosyalar1.AllowedExtensions = "jpeg|doc|docx|pdf|xls|xlsx|txt|msg|eml";                                 
