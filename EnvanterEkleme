@@ -1,0 +1,114 @@
+using System;
+using System.Collections;
+using System.Text;
+using System.Data;
+using eBAControls;
+using eBAControls.eBABaseForm;
+using eBAFormData;
+using eBADB;
+using eBAPI;
+using eBAPI.Connection;
+using eBAIntegrationAPI;
+using eBAPI.DocumentManagement;
+using System.Data.OleDb;
+using System.Collections.Generic;
+using System.Data.SqlClient;
+using System.Data;
+
+
+namespace Envanter_ParametreFormlari
+{
+
+	public partial class EnvanterKartlariFormu
+	{
+		
+		public void Cbox_Durum_OnAfterChange(Object sender, eBAListEventArgs e,DataRowView row)
+		{
+			   if(Cbox_Durum.SelectedItem.Value=="2"){txtKullanimYeri.Visible=true; Etiket8.Visible=true;}
+			   else{txtKullanimYeri.Visible=false; Etiket8.Visible=false; txtKullanimYeri.Text="";}
+		}
+		
+		public void OnLoadData()
+		
+		{ 
+       
+          if (DocumentOpenSource!=null && DocumentOpenSource.Equals("archive"))
+            {            
+                string archiveName = DocumentOpenArchiveName;
+                if(archiveName=="Envanter_KartListesi")
+    	      	{
+    	      	eBAConnection eBACon = CreateServerConnection();
+                eBACon.Open();
+                eBADBProvider db = CreateDatabaseProvider();  
+                eBAIntegrationQuery qr= new eBAIntegrationQuery("eBA","Envanter_KullanimDurumunaGore");  
+                qr.Parameters.Add("ID",id.ToString());         
+                DataTable dat = qr.Execute(eBACon);
+                if(dat.Rows.Count>0)
+                {
+                  if(!String.IsNullOrEmpty(dat.Rows[0]["txtUserId"].ToString())) 
+                  {CurrentView="viewGoruntule"; txtKullanimYeri.Visible=false; Etiket8.Visible=false;}              	      	   
+    	      	  else
+    	      	  {
+    	      	    CurrentView="viewDuzenleme"; txtKullanimYeri.Visible=false; Etiket8.Visible=false;
+                      
+                   if(Cbox_Durum.SelectedItem.Value=="2"){txtKullanimYeri.Visible=true; Etiket8.Visible=true;}
+    			   else{txtKullanimYeri.Visible=false; Etiket8.Visible=false; txtKullanimYeri.Text="";} 
+                  }
+                  }      	         	 	
+    			 
+    			}
+       }      
+		}
+		
+		public void OnSaveData()
+		{
+            
+		}
+		
+		public void btn_DurumGuncelle_OnClick(Object sender, EventArgs e)
+		{
+	      
+    	  ShowModalForm(btn_DurumGuncelle,"Envanter_ParametreFormlari","DurumGuncelle","default",true,-1,false);	 
+		}
+		
+		public void OnModalReturn(object sender, eBAModalEventArgs e)
+		{
+          if (DocumentOpenSource!=null && DocumentOpenSource.Equals("archive"))
+            {            
+                string archiveName = DocumentOpenArchiveName;
+                string archiveType = DocumentOpenArchiveType; 
+           
+        		if(archiveName=="Envanter_KartListesi")
+        		{
+        		  if (e.modalResult == ModalResult.Ok)
+                 {
+                   txtYeniDrum.Text=e.parameters["durum"].ToString(); 
+                                      
+                    if(Cbox_Durum.SelectedItem.Value!=txtYeniDrum.Text)
+            		{ 
+                     Cbox_Durum.SelectedItem.Value=txtYeniDrum.Text;            
+                        DataRow dr = tab_EnvanterHareketleri.CreateRow();
+                        dr["HareketTarihi"]=DateTime.Now;
+                        dr["HareketTuru"]="Düzenleme";
+                        dr["HareketReferansSurec"]="Görüntüleme/Düzenleme";
+                        dr["HareketReferansID"]="";
+                        dr["Personel"]="";
+                        dr["PersonelID"]="";    
+                        tab_EnvanterHareketleri.InsertRow(dr);
+                    }
+                    
+                 }   
+               }
+             }  
+		}
+		
+		public void OnBeginEdit()
+		{
+			  if(Cbox_Durum.SelectedItem.Value=="2"){txtKullanimYeri.Visible=true; Etiket8.Visible=true;}
+			   else{txtKullanimYeri.Visible=false; Etiket8.Visible=false; txtKullanimYeri.Text="";}
+		}
+
+
+
+	}
+}
