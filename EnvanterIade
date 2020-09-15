@@ -1,0 +1,142 @@
+using System;
+using System.Collections;
+using System.Text;
+using System.Data;
+using eBAControls;
+using eBAControls.eBABaseForm;
+using eBAFormData;
+using eBADB;
+using eBAPI;
+using eBAPI.Connection;
+using eBAIntegrationAPI;
+using eBAPI.DocumentManagement;
+using System.Data.OleDb;
+using System.Collections.Generic;
+using System.Data.SqlClient;
+using System.Data;
+
+namespace EnvanterSureci
+{
+
+	public partial class EnvanterIade
+	{
+		
+		public void Cbox_AdSoyad_OnAfterChange(Object sender, eBAListEventArgs e,DataRowView row)
+		{
+       detay_EnvanterListesi.Clear();
+		 SaveFormData(false,true); 
+			 if(!String.IsNullOrEmpty(Cbox_AdSoyad.Value.ToString()))
+			 {  
+			    eBAConnection eBACon = CreateServerConnection();
+               eBACon.Open();
+                eBADBProvider db = CreateDatabaseProvider();
+                SqlConnection connection=(SqlConnection)db.Connection; 
+                connection.Open();     
+               eBAIntegrationQuery qrydet= new eBAIntegrationQuery("eBA", "Envanter_KisiUzerindekiEnvanterler");   
+                qrydet.Parameters.Add("USERID",Cbox_AdSoyad.Value);            
+                DataTable data = qrydet.Execute(eBACon);
+                  
+             if(data.Rows.Count>0)
+             {  
+                
+               foreach(DataRow drow in data.Rows)                                   
+               {   
+                    eBAPI.Workflow.WorkflowManager flowClass = eBACon.WorkflowManager;
+                    eBAPI.Workflow.WorkflowDocument doc;          
+                    doc = flowClass.CreateDocument("EnvanterSureci", "EnvanterBilgileri_Iade");   
+                    int docId=0  ;   
+                    docId= Convert.ToInt32(doc.DocumentId);
+                       
+                    string sqlA ="UPDATE E_EnvanterSureci_EnvanterBilgileri_Iade set" +" Cbox_EnvanterCinsi='"+drow["Cbox_Cinsi"].ToString()+                                                                                                                        
+                    "',Cbox_EnvanterCinsi_TEXT='"+drow["Cbox_Cinsi_TEXT"].ToString()+                 
+                    "',txtEnvanterKodu='"+drow["txtEnvanterKodu"].ToString()+"',txtMarka='"+drow["txtMarka"].ToString()+
+                    "',txtModel='"+drow["txtModel"].ToString()+"',Cbox_Durum='"+drow["Cbox_Durum"].ToString()+"',Cbox_Durum_TEXT='"+drow["Cbox_Durum_TEXT"].ToString()+"',txtSeriNo='"+drow["txtSeriNo"].ToString()+"',txtAyrinti='"+drow["txtAyrintilar"].ToString()+"',txtAciklama='"+drow["txtaciklama"].ToString()+"',scm_IadeAlindi='1' WHERE (ID="+docId.ToString()+")";
+                    SqlCommand myCommand = new SqlCommand(sqlA,connection);
+                    myCommand.ExecuteNonQuery();                    
+                    eBAIntegrationQuery qry= new eBAIntegrationQuery("eBA", "Envanter_IadeMaxOrderID");
+                    qry.Parameters.Add("FORMID",id.ToString());                
+                    DataTable dt = qry.Execute(eBACon);
+                   eBAIntegrationQuery qry1= new eBAIntegrationQuery("eBA","Envanter_BirlikteTeslimEdilenlerListesi");
+                 
+                    qry1.Parameters.Add("USER",Cbox_AdSoyad.Value);   
+                    qry1.Parameters.Add("SERI",drow["txtSeriNo"].ToString());
+                    qry1.Parameters.Add("CINS",drow["Cbox_Cinsi_TEXT"].ToString());         
+                    DataTable dt1 = qry1.Execute(eBACon);  
+                           
+                     eBAIntegrationQuery qr1= new eBAIntegrationQuery("eBA","Envanter_IadeTeslimEdilenMaxOrder");
+                     qr1.Parameters.Add("FORMID",id.ToString()); 
+                     DataTable d1 = qr1.Execute(eBACon);  
+                     
+                     int con=0;
+                      
+                    if(dt1.Rows.Count>0)  
+                    { 
+                       if(d1.Rows.Count>0)  
+                      { 
+                         if(!String.IsNullOrEmpty(d1.Rows[0][0].ToString())) {
+                           con=Convert.ToInt32(d1.Rows[0][0].ToString());  con++;}
+                           }
+                              
+                      foreach(DataRow dw in dt1.Rows)                                   
+                       {
+                               string sqt ="INSERT INTO E_EnvanterSureci_EnvanterBilgileri_Iade_det_BirlikteTeslimEdilenler(FORMID,ORDERID,txtTeslimEdilen)" 
+                        + " VALUES(@FORMID,@ORDERID,@txtTeslimEdilen)";
+                        SqlCommand myCom = new SqlCommand(sqt,connection);    
+                        myCom.Parameters.AddWithValue("@FORMID",docId.ToString());
+                        myCom.Parameters.AddWithValue("@ORDERID", con.ToString());                  
+                        myCom.Parameters.AddWithValue("@txtTeslimEdilen",dw["TeslimEdilen"].ToString());                                                          
+                        myCom.ExecuteNonQuery();
+                          con++;                           
+                       }
+                     }
+                    
+                    int count=0;
+                    if(dt.Rows.Count>0){
+                    if(!String.IsNullOrEmpty(dt.Rows[0][0].ToString())){count=Convert.ToInt32(dt.Rows[0][0].ToString()); count++;}  }                                                                                 
+                    string sqlDet ="INSERT INTO E_EnvanterSureci_EnvanterIade_detay_EnvanterListesi(FORMID,ORDERID,DOCUMENTID,CHECKED)" 
+                    + " VALUES(@FORMID,@ORDERID,@DOCUMENTID,@CHECKED)";
+                    SqlCommand myComDet = new SqlCommand(sqlDet,connection);    
+                    myComDet.Parameters.AddWithValue("@FORMID", id.ToString());
+                    myComDet.Parameters.AddWithValue("@ORDERID", count.ToString());                  
+                    myComDet.Parameters.AddWithValue("@DOCUMENTID", docId.ToString());
+                    myComDet.Parameters.AddWithValue("@CHECKED", 0);                  
+                    myComDet.ExecuteNonQuery();  
+                                       
+              } 
+              }    
+	           eBACon.Close();
+               connection.Close();  
+			   LoadFormData();
+			 }
+		}
+		
+		public void OnLoadData()
+		{
+			 
+		}
+		
+		public void OnBeginEdit()
+		{
+			  
+		}
+		
+		public void detay_Yorumlar_RowDeleting(object sender, eBATableDeleteRowEventArgs args, DataRow dr)
+		{
+			eBAForm frm = new eBAForm(Convert.ToInt32(dr["DOCUMENTID"]));
+            if(LogonUser!=frm.Fields["bdUser"].AsString)
+            {
+               args.allow=false;  
+               ShowMessageBox("Sadece kendi yorumlarınızı silebilirsiniz.",eBAMessageBoxType.Information);
+            }
+		}
+	
+		
+		public void OnSaveData()
+		{
+            if(detay_EnvanterListesi.Data.Rows.Count == 0) tabloKontrol.Text = "1";
+            else tabloKontrol.Text = "0";			                             
+		    
+		}
+
+	}
+}
